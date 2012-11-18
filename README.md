@@ -8,7 +8,7 @@ A way of executing a piece of code on a remote clojure instance and retrieving i
 
 ### Starting the server on one instance
 ```clojure
-(use 'sugar-glider.core)
+(use 'sugar-glider.server)
 
 (def server 
     (glider-server { :port 4443 }))
@@ -20,7 +20,7 @@ A way of executing a piece of code on a remote clojure instance and retrieving i
 
 ### Connecting to that server from another instance
 ```clojure
-(use 'sugar-glider.core)
+(use 'sugar-glider.client)
 
 (def connection
     (glider-connect   { :host "localhost"
