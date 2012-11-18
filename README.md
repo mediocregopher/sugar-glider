@@ -6,7 +6,7 @@ A way of executing a piece of code on a remote clojure instance and retrieving i
 
 ## Usage
 
-**Starting the server on one instance**
+### Starting the server on one instance
 ```clojure
 (use 'sugar-glider.core)
 
@@ -18,7 +18,7 @@ A way of executing a piece of code on a remote clojure instance and retrieving i
 ;(glider-server-stop! server) stops the server whenever you want
 ```
 
-**Connecting to that server from another instance
+### Connecting to that server from another instance
 ```clojure
 (use 'sugar-glider.core)
 
@@ -32,6 +32,12 @@ A way of executing a piece of code on a remote clojure instance and retrieving i
                                 [:import 'java.util.Date] ]}))
 ```
 
+
+
+
+
+--------------------------
+
 Lets look at the ```glider-connect``` params individually. First:
 
 ```clojure
@@ -40,6 +46,12 @@ Lets look at the ```glider-connect``` params individually. First:
 ```
 
 Pretty self explanatory; the host and port of the sugar-glider server you're connecting to
+
+
+
+
+
+--------------------------
 
 ```clojure
 :ns   'project.shared
@@ -52,6 +64,12 @@ the namespace you want that code to run in. You can make up your own or use an e
 however, that commands like ```def``` will work, so it's possible to clobber and corrupt an existing
 namespace.
 
+
+
+
+
+--------------------------
+
 ```clojure
 :env  [ [:use 'lamina.core]
         [:require '[aleph.http :as ahttp]]
@@ -61,14 +79,17 @@ namespace.
 
 This is the environment you want the connection to exist in. Along with the namespace specified previously,
 here is where you specify all the uses/requires/imports you want that namespace to have on it. The first item
-in the vectors indicates the call you want, and the rest will be sent to the corresponding function using
-```apply```.
+in the vectors indicates the call you want, and the rest will be sent to the corresponding function using apply.
 
 I recommend that you don't use this. If you need these, create an actual source file on the remote server 
 to house the namespace and do everything in there. It's better to have everything you're going to do more 
 or less pre-defined anyway, the alternative being sending whole functions over the wire, which sucks.
 
-**Using the connection**
+
+
+
+
+### Using the connection
 
 Any arbitrary code can be sent over and evaluated. This uses a macro on the backend to quote the entirety of
 the second argument, serialize it, and send it over. The call to ```glide``` will block until the evaluated
