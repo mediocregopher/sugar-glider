@@ -26,7 +26,8 @@
     "Given a socket-ref and a function which returns a result-channel of a socket,
     swap out the current socket in the ref for a new one which for sure works"
     [socket-ref connect-fn]
-    (dosync (ref-set socket-ref (try-connect connect-fn))))
+    (let [newsock (try-connect connect-fn)]
+    (dosync (ref-set socket-ref newsock))))
 
 (defn glider-read 
     "Attempt to synchronously read from given socket, while detecting failure. On failure 
