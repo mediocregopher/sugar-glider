@@ -81,9 +81,14 @@ This is the environment you want the connection to exist in. Along with the name
 here is where you specify all the uses/requires/imports you want that namespace to have on it. The first item
 in the vectors indicates the call you want, and the rest will be sent to the corresponding function using apply.
 
-I recommend that you don't use this. If you need these, create an actual source file on the remote server 
-to house the namespace and do everything in there. It's better to have everything you're going to do more 
-or less pre-defined anyway, the alternative being sending whole functions over the wire, which sucks.
+Additionally if you want to use an already existing namespace in your ```:ns``` field you will have to add a 
+```use``` on the namespace here in order to make that namespace's pre-existing definitions available to the 
+connection.
+
+I recommend that you don't use this for anything except ```use```ing the connection's namespace. If you put all
+code in the location where it will actually be run (on the remote server, in this instance) then things will be
+simpler and easier to track with version control. They will also be faster since you won't be sending whole
+```def```s over the wire, just calls to them, which will certainly be faster.
 
 
 
