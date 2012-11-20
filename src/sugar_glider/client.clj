@@ -22,22 +22,43 @@
                          nil))]
         (if (nil? socket-try) (recur connect-fn) socket-try)))
 
-(defn remake-socket!
-    "Given a socket-ref and a function which returns a result-channel of a socket,
-    swap out the current socket in the ref for a new one which for sure works"
-    [socket-ref connect-fn]
-    (let [newsock (try-connect connect-fn)]
-    (dosync (ref-set socket-ref newsock))))
+(defn socket-poke 
+    "Given a [socket conn-fn], checks if the socket is closed. If it is, opens a new socket
+    and returns a new struct with that. Otherwise, returns struct that was given"
+    [agent-struct]
+    (let [ socket  (first agent-struct)
+           conn-fn (last  agent-struct) ]
+        (if (drained? socket) 
+            [(try-connect conn-fn) conn-fn]
+            agent-struct)))
+
+(defn get-socket 
+    "Given a glider-agent, pokes the socket to make sure it's alive, then returns the socket
+    from the agent. The poking is asynchronous, so even if the socket is closed this will
+    still return the closed socket. The method using this returned socket needs to catch the
+    exception which gets thrown when the socket is actually closed, and then call this
+    function AGAIN to get an actual good socket.
+
+    I'm sorry, this is bad, I should feel bad"
+    [glider-agent]
+    (send glider-agent socket-poke)
+    (first @glider-agent))
 
 (defn glider-read 
-    "Attempt to synchronously read from given socket, while detecting failure. On failure 
-    attempt to re-establish socket and try again"
-    [socket-ref connect-fn]
-    (let [socket-try (try (bytes->string @(read-channel @socket-ref))
-                     (catch java.lang.IllegalStateException e
-                        (remake-socket! socket-ref connect-fn)
-                        nil))]
-        (if (nil? socket-try) (recur socket-ref connect-fn) socket-try)))
+    "Given a glider-agent, attempts to synchronously read a line off of the associated socket"
+    [glider-agent]
+    (let [ socket (get-socket glider-agent) 
+           socket-try (try (bytes->string @(read-channel socket))
+                      (catch java.lang.IllegalStateException e nil)) ]
+        (if (nil? socket-try) (recur glider-agent) socket-try)))
+
+(defn glider-write
+    "Given a glider-agent, attempts to synchronously write a line to the associated socket"
+    [glider-agent data]
+    (let [ socket (get-socket glider-agent) 
+           socket-try (enqueue socket data) ]
+        (if (= :lamina/closed! socket-try)
+            (recur glider-agent data) nil))) 
 
 
 (defn glider-connect 
@@ -46,7 +67,7 @@
     :write-fn -> a function which when called will write a line to the socket
     :ns -> the namespace of the socket"
     [params]
-    (let [ connect-fn (tcp-connect-fn (params :host) (params :port))
-           socket-ref (ref (try-connect connect-fn))]
-           :a))
+    (let [ conn-fn (tcp-connect-fn (params :host) (params :port)) ]
+           (agent [(try-connect conn-fn) conn-fn])))
+
         
