@@ -46,25 +46,25 @@
     function AGAIN to get an actual good socket.
 
     I'm sorry, this is bad, I should feel bad"
-    [glider-agent]
-    (send glider-agent socket-poke)
-    (first @glider-agent))
+    [glider-struct]
+    (send (:agent glider-struct) socket-poke)
+    (first @(:agent glider-struct)))
 
 (defn glider-read 
     "Given a glider-agent, attempts to synchronously read a line off of the associated socket"
-    [glider-agent]
-    (let [ socket (get-socket glider-agent) 
+    [glider-struct]
+    (let [ socket (get-socket glider-struct)
            socket-try (try (bytes->string @(read-channel socket))
                       (catch java.lang.IllegalStateException e nil)) ]
-        (if (nil? socket-try) (recur glider-agent) socket-try)))
+        (if (nil? socket-try) (recur glider-struct) socket-try)))
 
 (defn glider-write
     "Given a glider-agent, attempts to synchronously write a line to the associated socket"
-    [glider-agent data]
-    (let [ socket (get-socket glider-agent) 
+    [glider-struct data]
+    (let [ socket (get-socket glider-struct) 
            socket-try (enqueue socket data) ]
         (if (= :lamina/closed! socket-try)
-            (recur glider-agent data) nil))) 
+            (recur glider-struct data) nil))) 
 
 
 (defn glider-connect 
@@ -74,10 +74,13 @@
     :ns -> the namespace of the socket"
     [params]
     (let [ conn-fn (tcp-connect-fn (params :host) (params :port)) ]
-           (agent [(try-connect conn-fn) conn-fn])))
+        {
+           :ns    (params :ns)
+           :agent (agent [(try-connect conn-fn) conn-fn])
+        }))
 
 (defn glider-close
     "Given an agent, closes the agent's socket. Don't do this if there's still
     reads and stuff happening, they'll probably crash"
-    [glider-agent]
-    (send glider-agent socket-close))
+    [glider-struct]
+    (send (:agent glider-struct) socket-close))
