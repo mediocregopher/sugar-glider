@@ -32,6 +32,12 @@
             [(try-connect conn-fn) conn-fn]
             agent-struct)))
 
+(defn socket-close
+    "Given a [socket conn-fn], closes the socket"
+    [agent-struct]
+    (let [ socket (first agent-struct) ]
+        (close socket)))
+
 (defn get-socket 
     "Given a glider-agent, pokes the socket to make sure it's alive, then returns the socket
     from the agent. The poking is asynchronous, so even if the socket is closed this will
@@ -70,4 +76,8 @@
     (let [ conn-fn (tcp-connect-fn (params :host) (params :port)) ]
            (agent [(try-connect conn-fn) conn-fn])))
 
-        
+(defn glider-close
+    "Given an agent, closes the agent's socket. Don't do this if there's still
+    reads and stuff happening, they'll probably crash"
+    [glider-agent]
+    (send glider-agent socket-close))
