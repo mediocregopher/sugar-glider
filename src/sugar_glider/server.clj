@@ -21,15 +21,21 @@
 
     Ex:
     Received - {:seq :1 :command '(+ 1 1')}
-    Sent     - {:seq :1 :command '2'}"
+    Sent     - {:seq :1 :command '2'}
+
+    If the map doesn't have a seq, we assume it's an async request, we
+    don't bother returning the value"
     [ch data-bytes]
     (let [data (bytes->string data-bytes)
           container (load-string data)]
-        (future (enqueue ch 
-            (str {:return (eval-string->string (:command container)) 
-                  :seq (:seq container) }) 
-            "\n"))))
-        
+        (future 
+            (let [return (eval-string->string (:command container))]
+                (if (contains? container :seq)
+                    (enqueue ch 
+                    (str {:return return
+                          :seq (:seq container) }) 
+                    "\n"))))))
+
 
 (defn glider-listen
     "Start listen server and set up connection handler"

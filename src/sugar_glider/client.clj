@@ -126,3 +126,11 @@
         (add-promise seqnum prom)
         (glider-write glider-struct (str command-struct))
         (load-string @prom)))
+
+(defn glider-command-async
+    "Sends a command asynchronously. Works similarly to glider-command, but doesn't
+    create a seq number or wait for any promise object"
+    [glider-struct command]
+    (let [command-struct {:command (str command)}]
+        (glider-write glider-struct (str command-struct))
+        nil))
