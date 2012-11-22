@@ -1,12 +1,36 @@
 (ns sugar-glider.client
-    (:use lamina.core aleph.tcp aleph.formats)
+    (:use lamina.core aleph.tcp aleph.formats gloss.core)
     (:import java.net.ConnectException java.lang.IllegalStateException))
+
+(def seq-counter (atom 0))
+(defn get-and-inc-seq [] (swap! seq-counter inc))
+
+(def promise-map (atom {}))
+(defn add-promise [seqnum prom]
+    (swap! promise-map #(assoc % seqnum prom)))
+(defn get-promise [seqnum]
+    (@promise-map seqnum))
+(defn del-promise [seqnum]
+    (swap! promise-map #(dissoc % seqnum)))
 
 (defn tcp-connect-fn
     "Returns a function which when called will return a result-channel of a socket
     for this given connection"
     [host port]
-    #(tcp-client {:host host :port port}))
+    #(tcp-client {:host host :port port :frame (string :utf-8 :delimiters "\n")}))
+
+(defn on-receive 
+    "When we receive any data from the glider server, we want to get the associated
+    promise object, delete the promise from the global map, then deliver the return
+    string to the promise. The person waiting on the promise will eval the final
+    string"
+    [data]
+    (let [return-struct (load-string data)
+          seqnum        (:seq return-struct)
+          return-string (:return return-struct)
+          prom          (get-promise seqnum)]
+        (del-promise seqnum)
+        (deliver prom return-string)))
 
 (defn try-connect
     "Given a function which returns a result-channel of a socket, continuously tries that
@@ -20,7 +44,10 @@
                          (println "Connection failed: " e)
                          (Thread/sleep 1000)
                          nil))]
-        (if (nil? socket-try) (recur connect-fn) socket-try)))
+        (if (nil? socket-try) (recur connect-fn) 
+            (do
+                (receive-all socket-try on-receive)
+                socket-try))))
 
 (defn socket-poke 
     "Given a [socket conn-fn], checks if the socket is closed. If it is, opens a new socket
@@ -54,7 +81,7 @@
     "Given a glider-agent, attempts to synchronously read a line off of the associated socket"
     [glider-struct]
     (let [ socket (get-socket glider-struct)
-           socket-try (try (bytes->string @(read-channel socket))
+           socket-try (try @(read-channel socket)
                       (catch java.lang.IllegalStateException e nil)) ]
         (if (nil? socket-try) (recur glider-struct) socket-try)))
 
@@ -62,7 +89,7 @@
     "Given a glider-agent, attempts to synchronously write a line to the associated socket"
     [glider-struct data]
     (let [ socket (get-socket glider-struct) 
-           socket-try (enqueue socket data) ]
+           socket-try (enqueue socket (str data)) ]
         (if (= :lamina/closed! socket-try)
             (recur glider-struct data) nil))) 
 
@@ -84,3 +111,16 @@
     reads and stuff happening, they'll probably crash"
     [glider-struct]
     (send (:agent glider-struct) socket-close))
+
+(defn glider-command
+    "Given a quoted command, create a seq number and a promise, add the promise
+    to the promise map with the seq number, send off the command to the server,
+    then wait for the promise to be delivered. The delivery will be the string
+    representation of the answer, eval it and return that"
+    [glider-struct command]
+    (let [seqnum (get-and-inc-seq)
+          command-struct {:seq seqnum :command (str command)}
+          prom (promise)]
+        (add-promise seqnum prom)
+        (glider-write glider-struct (str command-struct))
+        (load-string @prom)))
