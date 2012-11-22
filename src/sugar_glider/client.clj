@@ -134,3 +134,8 @@
     (let [command-struct {:command (str command)}]
         (glider-write glider-struct (str command-struct))
         nil))
+
+(defmacro glide [glider-struct command]
+    `(glider-command ~glider-struct (quote ~command)))
+(defmacro glide-async [glider-struct command]
+    `(glider-command-async ~glider-struct (quote ~command)))
