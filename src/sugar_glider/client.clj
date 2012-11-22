@@ -78,7 +78,9 @@
     (first @(:agent glider-struct)))
 
 (defn glider-read 
-    "Given a glider-agent, attempts to synchronously read a line off of the associated socket"
+    "Given a glider-agent, attempts to synchronously read a line off of the associated socket
+    
+    (This isn't ever used, I wrote it for initial testing"
     [glider-struct]
     (let [ socket (get-socket glider-struct)
            socket-try (try @(read-channel socket)
