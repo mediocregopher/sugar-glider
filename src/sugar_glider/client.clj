@@ -96,17 +96,19 @@
             (recur glider-struct data) nil))) 
 
 
+(declare glider-command)
 (defn glider-connect 
     "Given a params map returns a glider connection. This is really a map of
     :read-fn -> a function which when called will read a line off the socket
     :write-fn -> a function which when called will write a line to the socket
     :ns -> the namespace of the socket"
     [params]
-    (let [ conn-fn (tcp-connect-fn (params :host) (params :port)) ]
-        {
-           :ns    (params :ns)
-           :agent (agent [(try-connect conn-fn) conn-fn])
-        }))
+    (let [ conn-fn (tcp-connect-fn (params :host) (params :port))
+           glider-struct { :ns (params :ns) 
+                           :agent (agent [(try-connect conn-fn) conn-fn]) } ]
+        (doseq [env-item (params :env [])]
+            (glider-command glider-struct env-item))
+        glider-struct))
 
 (defn glider-close
     "Given an agent, closes the agent's socket. Don't do this if there's still
