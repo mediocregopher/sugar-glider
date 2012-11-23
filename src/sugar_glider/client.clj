@@ -121,7 +121,9 @@
     representation of the answer, eval it and return that"
     [glider-struct command]
     (let [seqnum (get-and-inc-seq)
-          command-struct {:seq seqnum :command (str command)}
+          server-ns (glider-struct :ns)
+          ns-command `(ns ~server-ns)
+          command-struct {:seq seqnum :command (str ns-command " " command)}
           prom (promise)]
         (add-promise seqnum prom)
         (glider-write glider-struct (str command-struct))

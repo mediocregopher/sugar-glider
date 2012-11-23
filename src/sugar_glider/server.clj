@@ -32,9 +32,8 @@
             (let [return (eval-string->string (:command container))]
                 (if (contains? container :seq)
                     (enqueue ch 
-                    (str {:return return
-                          :seq (:seq container) }) 
-                    "\n"))))))
+                        (str {:return return
+                              :seq (:seq container) } "\n") ))))))
 
 
 (defn glider-listen
