@@ -99,9 +99,12 @@
 (declare glider-command)
 (defn glider-connect 
     "Given a params map returns a glider connection. This is really a map of
-    :read-fn -> a function which when called will read a line off the socket
-    :write-fn -> a function which when called will write a line to the socket
-    :ns -> the namespace of the socket"
+    :agent -> reference to agent which holds the socket
+    :ns -> the namespace of the socket
+    
+    Also handles the :env param, by running each item in :env as a command
+    on the created connection (used primarily for use, require and import
+    commands"
     [params]
     (let [ conn-fn (tcp-connect-fn (params :host) (params :port))
            glider-struct { :ns (params :ns) 
