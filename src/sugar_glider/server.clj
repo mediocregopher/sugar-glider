@@ -1,5 +1,5 @@
 (ns sugar-glider.server
-    (:use lamina.core aleph.tcp aleph.formats)
+    (:use lamina.core aleph.tcp gloss.core)
     (:import java.lang.Exception))
 
 (defn eval-string->string 
@@ -33,7 +33,7 @@
                 (if (contains? container :seq)
                     (enqueue ch 
                         (str {:return return
-                              :seq (:seq container) } "\n") ))))))
+                              :seq (:seq container) }) ))))))
 
 
 (defn glider-listen
@@ -41,7 +41,7 @@
     [params]
     (start-tcp-server 
         (fn [ch _] (receive-all ch (partial data-handler ch)))
-        {:port (:port params)}))
+        {:port (:port params) :frame (string :utf-8 :delimiters "\n")}))
 
 (defn glider-stop-listening
     "Stops the listen server"

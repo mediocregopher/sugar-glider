@@ -1,5 +1,5 @@
 (ns sugar-glider.client
-    (:use lamina.core aleph.tcp aleph.formats gloss.core)
+    (:use lamina.core aleph.tcp gloss.core)
     (:import java.net.ConnectException java.lang.IllegalStateException))
 
 (def seq-counter (atom 0))
