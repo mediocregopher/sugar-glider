@@ -92,8 +92,8 @@
     [glider-struct data]
     (let [ socket (get-socket glider-struct) 
            socket-try (enqueue socket (str data)) ]
-        (if (= :lamina/closed! socket-try)
-            (recur glider-struct data) nil))) 
+        (when (= :lamina/closed! socket-try)
+            (recur glider-struct data))))
 
 
 (declare glider-command)
